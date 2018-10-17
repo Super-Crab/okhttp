@@ -37,6 +37,10 @@ import static okhttp3.internal.Util.hostHeader;
  * request. Then it proceeds to call the network. Finally it builds a user response from the network
  * response.
  */
+
+/**
+ * @deprecated 用于构建请求头 以及转换response
+ */
 public final class BridgeInterceptor implements Interceptor {
   private final CookieJar cookieJar;
 
@@ -48,6 +52,7 @@ public final class BridgeInterceptor implements Interceptor {
     Request userRequest = chain.request();
     Request.Builder requestBuilder = userRequest.newBuilder();
 
+    //构建request的 header
     RequestBody body = userRequest.body();
     if (body != null) {
       MediaType contentType = body.contentType();
