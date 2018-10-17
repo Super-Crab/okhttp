@@ -37,19 +37,24 @@ import okhttp3.internal.Util;
  * of calls concurrently.
  */
 public final class Dispatcher {
+  //最大并发数
   private int maxRequests = 64;
+  //每个host最大请求数
   private int maxRequestsPerHost = 5;
   private @Nullable Runnable idleCallback;
 
   /** Executes calls. Created lazily. */
   private @Nullable ExecutorService executorService;
 
+  //待运行的异步队列
   /** Ready async calls in the order they'll be run. */
   private final Deque<AsyncCall> readyAsyncCalls = new ArrayDeque<>();
 
+  //运行中的异步队列
   /** Running asynchronous calls. Includes canceled calls that haven't finished yet. */
   private final Deque<AsyncCall> runningAsyncCalls = new ArrayDeque<>();
 
+  //运行中的同步队列
   /** Running synchronous calls. Includes canceled calls that haven't finished yet. */
   private final Deque<RealCall> runningSyncCalls = new ArrayDeque<>();
 
@@ -125,8 +130,10 @@ public final class Dispatcher {
   }
 
   synchronized void enqueue(AsyncCall call) {
+    //当最大并发数小于 64 并且每个主机最大的请求书小于5的时候，异步请求会被加入到运行队列并执行，否则加入ready队列
     if (runningAsyncCalls.size() < maxRequests && runningCallsForHost(call) < maxRequestsPerHost) {
       runningAsyncCalls.add(call);
+    //线程池中执行任务 -》NamedRunnable.run() -> AsyncCall.execute()
       executorService().execute(call);
     } else {
       readyAsyncCalls.add(call);
@@ -151,6 +158,7 @@ public final class Dispatcher {
     }
   }
 
+  //将ready队列中的线程加入到准备队列中并执行
   private void promoteCalls() {
     if (runningAsyncCalls.size() >= maxRequests) return; // Already running max capacity.
     if (readyAsyncCalls.isEmpty()) return; // No ready calls to promote.

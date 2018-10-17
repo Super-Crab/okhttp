@@ -148,6 +148,7 @@ final class RealCall implements Call {
           responseCallback.onFailure(RealCall.this, e);
         }
       } finally {
+        //请求结束后移除此异步
         client.dispatcher().finished(this);
       }
     }
