@@ -39,7 +39,7 @@ import static okhttp3.internal.Util.hostHeader;
  */
 
 /**
- * @deprecated 用于构建请求头 以及转换response
+ * @desc 用于构建请求头 以及转换response
  */
 public final class BridgeInterceptor implements Interceptor {
   private final CookieJar cookieJar;
