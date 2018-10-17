@@ -49,9 +49,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public final class CacheStrategy {
   /** The request to send on the network, or null if this call doesn't use the network. */
+  //不为空，则进行网络请求
   public final @Nullable Request networkRequest;
 
   /** The cached response to return or validate; or null if this call doesn't use a cache. */
+  //不为空，则使用本地缓存
   public final @Nullable Response cacheResponse;
 
   CacheStrategy(Request networkRequest, Response cacheResponse) {
@@ -141,7 +143,7 @@ public final class CacheStrategy {
       this.nowMillis = nowMillis;
       this.request = request;
       this.cacheResponse = cacheResponse;
-
+      //当获取到的上一次缓存不为空，取出缓存中的头部信息，为后面更新缓存做准备
       if (cacheResponse != null) {
         this.sentRequestMillis = cacheResponse.sentRequestAtMillis();
         this.receivedResponseMillis = cacheResponse.receivedResponseAtMillis();
