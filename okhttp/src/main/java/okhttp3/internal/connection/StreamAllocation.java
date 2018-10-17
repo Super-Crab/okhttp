@@ -83,6 +83,7 @@ public final class StreamAllocation {
   private boolean canceled;
   private HttpCodec codec;
 
+  //在 RetryAndFollowUpInterceptor 中被创建
   public StreamAllocation(ConnectionPool connectionPool, Address address, Object callStackTrace) {
     this.connectionPool = connectionPool;
     this.address = address;

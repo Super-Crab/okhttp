@@ -60,6 +60,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
    * How many redirects and auth challenges should we attempt? Chrome follows 21 redirects; Firefox,
    * curl, and wget follow 20; Safari follows 16; and HTTP/1.0 recommends 5.
    */
+  //最大重试次数
   private static final int MAX_FOLLOW_UPS = 20;
 
   private final OkHttpClient client;
@@ -103,6 +104,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
   @Override public Response intercept(Chain chain) throws IOException {
     Request request = chain.request();
 
+    //创建 streamAllocation 对象
     streamAllocation = new StreamAllocation(
         client.connectionPool(), createAddress(request.url()), callStackTrace);
 
@@ -115,20 +117,24 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
       }
 
       Response response = null;
+      //是否需要释放链接
       boolean releaseConnection = true;
       try {
         response = ((RealInterceptorChain) chain).proceed(request, streamAllocation, null, null);
         releaseConnection = false;
       } catch (RouteException e) {
         // The attempt to connect via a route failed. The request will not have been sent.
+        //检测route是否可以再次链接，不可以抛出异常 进行finally
         if (!recover(e.getLastConnectException(), false, request)) {
           throw e.getLastConnectException();
         }
+        //可以链接，死循环重试
         releaseConnection = false;
         continue;
       } catch (IOException e) {
         // An attempt to communicate with a server failed. The request may have been sent.
         boolean requestSendStarted = !(e instanceof ConnectionShutdownException);
+        //检测route是否可以再次链接，不可以抛出异常 进行finally
         if (!recover(e, requestSendStarted, request)) throw e;
         releaseConnection = false;
         continue;
@@ -149,6 +155,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
             .build();
       }
 
+      //响应吗检测
       Request followUp = followUpRequest(response);
 
       if (followUp == null) {
@@ -209,15 +216,19 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
     streamAllocation.streamFailed(e);
 
     // The application layer has forbidden retries.
+    //是否支持重试机制
     if (!client.retryOnConnectionFailure()) return false;
 
     // We can't send the request body again.
+    //当出现IO exception时
     if (requestSendStarted && userRequest.body() instanceof UnrepeatableRequestBody) return false;
 
+    //检测异常 为特殊异常时，则不允许重试
     // This exception is fatal.
     if (!isRecoverable(e, requestSendStarted)) return false;
 
     // No more routes to attempt.
+    //是否还有更多的线路可以选择
     if (!streamAllocation.hasMoreRoutes()) return false;
 
     // For failure recovery, use the same route selector with a new connection.

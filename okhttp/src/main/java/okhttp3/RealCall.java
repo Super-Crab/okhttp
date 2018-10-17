@@ -67,6 +67,7 @@ final class RealCall implements Call {
     captureCallStackTrace();
     try {
       client.dispatcher().executed(this);
+      //获取response
       Response result = getResponseWithInterceptorChain();
       if (result == null) throw new IOException("Canceled");
       return result;
@@ -133,6 +134,7 @@ final class RealCall implements Call {
     @Override protected void execute() {
       boolean signalledCallback = false;
       try {
+        //获取response
         Response response = getResponseWithInterceptorChain();
         if (retryAndFollowUpInterceptor.isCanceled()) {
           signalledCallback = true;
@@ -169,19 +171,28 @@ final class RealCall implements Call {
     return originalRequest.url().redact();
   }
 
+  ////获取response
   Response getResponseWithInterceptorChain() throws IOException {
     // Build a full stack of interceptors.
+    //构建拦截器
     List<Interceptor> interceptors = new ArrayList<>();
+    //加入用户自定义的拦截器
     interceptors.addAll(client.interceptors());
+    //重试拦截器
     interceptors.add(retryAndFollowUpInterceptor);
+    //
     interceptors.add(new BridgeInterceptor(client.cookieJar()));
+    //缓存拦截器
     interceptors.add(new CacheInterceptor(client.internalCache()));
+    //链接拦截器
     interceptors.add(new ConnectInterceptor(client));
     if (!forWebSocket) {
       interceptors.addAll(client.networkInterceptors());
     }
+    //发送请求的拦截器
     interceptors.add(new CallServerInterceptor(forWebSocket));
 
+    //通过RealInterceptorChain 进行拦截器的遍历
     Interceptor.Chain chain = new RealInterceptorChain(
         interceptors, null, null, null, 0, originalRequest);
     return chain.proceed(originalRequest);
